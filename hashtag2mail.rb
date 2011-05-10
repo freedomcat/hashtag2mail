@@ -91,7 +91,7 @@ class HashtagCloudCsvApi
 		}
 
 		open(@writetxt,'w'){ |writer|
-			writer.print("=== twitter [#"+@hashtag+"] �Ɋւ���"+@ymd+"�̌�������\r\n")
+			writer.print("=== twitter [#"+@hashtag+"] に関する"+@ymd+"の検索結果\r\n")
 
 			tweet.each do |tmp|
 				writer.print("\r\n")
@@ -101,12 +101,12 @@ class HashtagCloudCsvApi
 
 			writer.print("\r\n\r\n")
 
-			writer.print("���̃��[����"+"<http://hashtagcloud.net/info/"+@hashtag+">"+"�̃f�[�^�𗘗p�������肵�Ă��܂��B\r\n")
+			writer.print("このメールは"+"<http://hashtagcloud.net/info/"+@hashtag+">"+"のデータを利用しお送りしています。\r\n")
 		}
 	end
 
 	def setSubject()
-		@subject = @ymd+" twitter #"+@hashtag+"�̂܂Ƃߓǂ�"
+		@subject = @ymd+" twitter #"+@hashtag+"のまとめ読み"
 	end
 end
 
