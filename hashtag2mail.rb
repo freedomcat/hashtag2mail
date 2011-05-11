@@ -9,7 +9,6 @@ require 'nkf'
 require 'net/smtp'
 require 'cgi'
 
-
 #from = "your mail address"
 # if from mail use GMail set pass 
 # and use SendGMail.new
@@ -68,7 +67,9 @@ class HashtagCloudCsvApi
 	Tweets = Struct.new(:msg,:footer)
 
 	def convertMail
-		tweet = [] 
+		tmptweets = [] 
+		tweets = []
+		retweets = []
 
 		CSV.open(@readcsv,'r'){ |row|
 
@@ -78,30 +79,47 @@ class HashtagCloudCsvApi
 
 			msgAddFlg = TRUE 
 			rtmsg = msg.gsub(/^RT\s@\w+?:\s/){$1}
-			tweet.each do |tmp|
-				if(msg==tmp.msg || rtmsg==tmp.msg) then
-					tmp.footer.concat(footer)
+			tmptweets.each do |tweet|
+				if(msg==tweet.msg || rtmsg==tweet.msg) then
+					tweet.footer.concat(footer)
 					msgAddFlg = FALSE 
 				end
 			end
 			if( msgAddFlg ) then
-				tmp = Tweets.new( msg, footer)
-				tweet.push(tmp)
+				tweet = Tweets.new( msg, footer)
+				tmptweets.push(tweet)
 			end
 		}
 
-		open(@writetxt,'w'){ |writer|
-			writer.print("=== twitter [#"+@hashtag+"] に関する"+@ymd+"の検索結果\r\n")
+		tmptweets.each do |tweet|
+			if( /^RT/ =~ tweet.msg )then
+				retweets.push(tweet)
+			else
+				tweets.push(tweet)
+			end
+		end
 
-			tweet.each do |tmp|
+		open(@writetxt,'w'){ |writer|
+			writer.print(Kconv.tojis("=== twitter [#"+@hashtag+"] に関する"+@ymd+"の検索結果\r\n"))
+
+			writer.print("\r\n")
+
+			tweets.each do |tweet|
 				writer.print("\r\n")
-				writer.print(tmp.msg.to_s+"\r\n")
-				writer.print(tmp.footer.to_s+"\r\n")
+				writer.print(Kconv.tojis(tweet.msg+"\r\n"))
+				writer.print(Kconv.tojis(tweet.footer+"\r\n"))
 			end
 
 			writer.print("\r\n\r\n")
 
-			writer.print("このメールは"+"<http://hashtagcloud.net/info/"+@hashtag+">"+"のデータを利用しお送りしています。\r\n")
+			retweets.each do |tweet|
+				writer.print(Kconv.tojis(tweet.msg+"\r\n"))
+				writer.print(Kconv.tojis(tweet.footer+"\r\n"))
+			end
+
+			writer.print("\r\n\r\n")
+
+			writer.print(Kconv.tojis("このメールは"+"<http://hashtagcloud.net/info/"+@hashtag+">"+"のデータを利用しお送りしています。\r\n"))
 		}
 	end
 
@@ -129,6 +147,27 @@ EOT
    	 smtp.send_mail body, from, to
  	 end
 	end
+end
+
+class SendGMail
+	def initialize(from, to, subject, body, user, pass, host = "smtp.gmail.com", port = 587)
+	  body = <<EOT
+From: #{from}
+To: #{to.to_a.join(",\n ")}
+Subject: #{NKF.nkf("-WMm0", subject)}
+Date: #{Time::now.strftime("%a, %d %b %Y %X %z")}
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
+Content-Transfer-Encoding: 7bit
+
+#{NKF.nkf("-Wjm0", body)}
+EOT
+
+  	Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE)
+  	Net::SMTP.start(host, port, "localhost.localdomain", user, pass, "plain") do |smtp|
+		 smtp.send_mail body, from, to
+ 	 end
+  end
 end
 
 
