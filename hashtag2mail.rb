@@ -143,10 +143,8 @@ class HashtagCloudCsvApi
 	def checkToday
 		day = Date::today.to_s
 		if(@ymd==day)then
-		print "today" 
 			return TRUE  
 		else
-		print "not today" 
 			return FALSE 
 		end
 	end
