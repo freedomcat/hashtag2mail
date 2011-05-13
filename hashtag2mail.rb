@@ -16,29 +16,30 @@ require 'cgi'
 #to = "to mail address"
 #hashtag = "hashtag no #"
 
-class HashtagCloudCsvApi
-	def initialize(hashtag,yyyy=nil,mm=nil,dd=nil)
-		@hashtag = hashtag
-		@ymd = nil 
-		if(yyyy==nil) then
-			day = Date::today
-			day = day - 1
-			@ymd = day.to_s
+# default yyyy,mm,dd = nil get yestarday data.
 
-		elsif(yyyy!=nil && mm!=nil && dd!=nil) then
-			@ymd = yyyy+"-"+mm+"-"+dd
-		end
+yyyy = nil 
+mm = nil 
+dd = nil 
+
+# if you get unique day data. you set date.
+#year = "2011" 
+#month = "05"
+#date = "12"
+
+class HashtagCloudCsvApi
+
+	def initialize(hashtag,yyyy=nil,mm=nil,dd=nil)
+
+		@hashtag = hashtag
+
+		@ymd = setYmd(yyyy,mm,dd) 
 
 		setSubject
 
-		tmp = "./tmp/"
-		url = "http://hashtagcloud.net/output-file/type=csv&name="+@hashtag+"&start_date="+@ymd+"/"+hashtag+"_"+@ymd+".csv.txt"
-		@readcsv = tmp+@hashtag+@ymd+".csv"
-		open(@readcsv,'wb') do |file|
-			file.puts Net::HTTP.get_response(URI.parse(url)).body
-		end
+		@readcsv = getHashtagCloudData
 
-		@writetxt = tmp+@hashtag+@ymd+".txt"
+		@writetxt = "./tmp/"+@hashtag+@ymd+".txt"
 
 		convertMail
 
@@ -123,6 +124,45 @@ class HashtagCloudCsvApi
 		}
 	end
 
+	def getHashtagCloudData
+
+		readcsv = "./tmp/"+@hashtag+@ymd+".csv"
+
+		if( checkToday || !File.exist?(readcsv) )then
+
+			url = "http://hashtagcloud.net/output-file/type=csv&name="+@hashtag+"&start_date="+@ymd+"/"+@hashtag+"_"+@ymd+".csv.txt"
+
+			open(readcsv,'wb') do |file|
+				file.puts Net::HTTP.get_response(URI.parse(url)).body
+			end
+		end
+
+		return readcsv
+	end
+
+	def checkToday
+		day = Date::today.to_s
+		if(@ymd==day)then
+		print "today" 
+			return TRUE  
+		else
+		print "not today" 
+			return FALSE 
+		end
+	end
+
+	def setYmd(yyyy=nil,mm=nil,dd=nil)
+		ymd = nil
+		if(yyyy==nil) then
+			day = Date::today
+			day = day - 1
+			ymd = day.to_s
+		elsif(yyyy!=nil && mm!=nil && dd!=nil) then
+			ymd = yyyy+"-"+mm+"-"+dd
+		end
+		return ymd
+	end
+
 	def setSubject()
 		@subject = @ymd+" twitter #"+@hashtag+"のまとめ読み"
 	end
@@ -169,8 +209,8 @@ EOT
 	end
 end
 
-
-csv=HashtagCloudCsvApi.new(hashtag)
+#csv=HashtagCloudCsvApi.new(hashtag)
+csv=HashtagCloudCsvApi.new(hashtag,year,month,date)
 
 ymd = csv.getHashTagDate
 subject = Kconv.tojis( csv.getSubject() )
