@@ -18,14 +18,14 @@ require 'cgi'
 
 # default yyyy,mm,dd = nil get yestarday data.
 
-yyyy = nil 
-mm = nil 
-dd = nil 
+year = nil 
+month = nil 
+date = nil 
 
 # if you get unique day data. you set date.
 #year = "2011" 
 #month = "05"
-#date = "12"
+#date = "10"
 
 class HashtagCloudCsvApi
 
